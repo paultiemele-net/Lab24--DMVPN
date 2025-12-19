@@ -1,0 +1,201 @@
+!=====================================================
+! DMVPN CONFIGURATION – HUB & SPOKES
+!=====================================================
+
+!=====================================================
+! TOPOLOGY
+!-----------------------------------------------------
+! Router 1 : HUB
+!  - e0/0 : 10.10.10.1 (LAN)
+!  - e0/1 : 20.20.20.1 (WAN / Public)
+!
+! Router 2 : SPOKE 1
+!  - e0/0 : 20.20.20.2 (WAN)
+!  - e0/2 : 60.60.60.1 (LAN)
+!
+! Router 3 : SPOKE 2
+!  - e0/0 : 30.30.30.2 (WAN)
+!  - e0/1 : 70.70.70.1 (LAN)
+!
+! Router 4 : SPOKE 3
+!  - e0/0 : 40.40.40.2 (WAN)
+!  - e0/1 : 80.80.80.1 (LAN)
+!
+! Tunnel Network : 11.11.11.0/24
+!=====================================================
+
+
+!=====================================================
+! ROUTER 1 – DMVPN HUB
+!=====================================================
+conf t
+
+! LAN Interface
+interface e0/0
+ ip address 10.10.10.1 255.255.255.0
+ no shutdown
+exit
+
+! WAN Interface (Public Network)
+interface e0/1
+ ip address 20.20.20.1 255.255.255.0
+ no shutdown
+exit
+
+!-----------------------------------------------------
+! DMVPN Tunnel Interface (Hub)
+!-----------------------------------------------------
+interface tunnel0
+ ip address 11.11.11.1 255.255.255.0
+ tunnel source 20.20.20.1
+ tunnel mode gre multipoint
+ tunnel key 123
+ ip nhrp network-id 1
+ ip nhrp authentication type1998
+ ip nhrp map multicast dynamic
+ no shutdown
+exit
+
+!-----------------------------------------------------
+! OSPF over DMVPN
+!-----------------------------------------------------
+router ospf 1
+ router-id 1.1.1.1
+ network 11.11.11.0 0.0.0.255 area 0
+ network 10.10.10.0 0.0.0.255 area 0
+exit
+
+
+!=====================================================
+! ROUTER 2 – SPOKE 1
+!=====================================================
+conf t
+
+! WAN Interface
+interface e0/0
+ ip address 20.20.20.2 255.255.255.0
+ no shutdown
+exit
+
+! LAN Interface
+interface e0/2
+ ip address 60.60.60.1 255.255.255.0
+ no shutdown
+exit
+
+!-----------------------------------------------------
+! DMVPN Tunnel Interface (Spoke 1)
+!-----------------------------------------------------
+interface tunnel0
+ ip address 11.11.11.2 255.255.255.0
+ tunnel source e0/0
+ tunnel mode gre multipoint
+ tunnel key 123
+ ip nhrp network-id 1
+ ip nhrp authentication type1998
+ ip nhrp nhs 11.11.11.1
+ ip nhrp map 11.11.11.1 20.20.20.1
+ ip nhrp map multicast 20.20.20.1
+ no shutdown
+exit
+
+! OSPF Configuration
+router ospf 1
+ router-id 2.2.2.2
+ network 11.11.11.0 0.0.0.255 area 0
+ network 60.60.60.0 0.0.0.255 area 0
+exit
+
+
+!=====================================================
+! ROUTER 3 – SPOKE 2
+!=====================================================
+conf t
+
+! WAN Interface
+interface e0/0
+ ip address 30.30.30.2 255.255.255.0
+ no shutdown
+exit
+
+! LAN Interface
+interface e0/1
+ ip address 70.70.70.1 255.255.255.0
+ no shutdown
+exit
+
+!-----------------------------------------------------
+! DMVPN Tunnel Interface (Spoke 2)
+!-----------------------------------------------------
+interface tunnel0
+ ip address 11.11.11.3 255.255.255.0
+ tunnel source e0/0
+ tunnel mode gre multipoint
+ tunnel key 123
+ ip nhrp network-id 1
+ ip nhrp authentication type1998
+ ip nhrp nhs 11.11.11.1
+ ip nhrp map 11.11.11.1 20.20.20.1
+ ip nhrp map multicast 20.20.20.1
+ no shutdown
+exit
+
+! OSPF Configuration
+router ospf 1
+ router-id 3.3.3.3
+ network 11.11.11.0 0.0.0.255 area 0
+ network 70.70.70.0 0.0.0.255 area 0
+exit
+
+
+!=====================================================
+! ROUTER 4 – SPOKE 3
+!=====================================================
+conf t
+
+! WAN Interface
+interface e0/0
+ ip address 40.40.40.2 255.255.255.0
+ no shutdown
+exit
+
+! LAN Interface
+interface e0/1
+ ip address 80.80.80.1 255.255.255.0
+ no shutdown
+exit
+
+!-----------------------------------------------------
+! DMVPN Tunnel Interface (Spoke 3)
+!-----------------------------------------------------
+interface tunnel0
+ ip address 11.11.11.4 255.255.255.0
+ tunnel source e0/0
+ tunnel mode gre multipoint
+ tunnel key 123
+ ip nhrp network-id 1
+ ip nhrp authentication type1998
+ ip nhrp nhs 11.11.11.1
+ ip nhrp map 11.11.11.1 20.20.20.1
+ ip nhrp map multicast 20.20.20.1
+ no shutdown
+exit
+
+! OSPF Configuration
+router ospf 1
+ router-id 4.4.4.4
+ network 11.11.11.0 0.0.0.255 area 0
+ network 80.80.80.0 0.0.0.255 area 0
+exit
+
+
+!=====================================================
+! VERIFICATION
+!=====================================================
+! show dmvpn
+! show ip nhrp
+! show ip ospf neighbor
+! show ip route
+! ping 60.60.60.2
+! ping 70.70.70.2
+! ping 80.80.80.2
